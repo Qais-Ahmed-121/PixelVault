@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StegaVault | Secure Password Vault</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+        }
+
+        .nebula-grad {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #c026d3 100%);
+        }
+
+        .glass {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .card-hover:hover {
+            transform: translateY(-4px);
+            border-color: #a855f7;
+            box-shadow: 0 10px 25px -5px rgba(168, 85, 247, 0.2);
+        }
+    </style>
+</head>
+
+<body class="min-h-screen pb-12">
+    <!-- Navbar -->
+    <nav class="glass sticky top-0 z-50 px-6 py-4 flex justify-between items-center mb-12">
+        <div class="flex items-center space-x-2">
+            <div class="w-10 h-10 nebula-grad rounded-xl flex items-center justify-center shadow-lg">
+                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z">
+                    </path>
+                </svg>
+            </div>
+            <h1 class="text-2xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
+                StegaVault Vault</h1>
+        </div>
+        <div class="flex items-center space-x-6">
+            <a href="dashboard.html" class="text-gray-400 hover:text-white transition-colors">Stego Dashboard</a>
+            <a href="notes.html" class="text-gray-400 hover:text-white transition-colors">Secure Notes</a>
+            <a href="generator.html" class="text-gray-400 hover:text-white transition-colors">Generator</a>
+            <button onclick="logout()"
+                class="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-sm font-semibold transition-all">Logout</button>
+        </div>
+    </nav>
+
+    <main class="max-w-6xl mx-auto px-6">
+        <!-- Stats Bar -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            <div class="glass p-6 rounded-2xl flex flex-col items-center">
+                <span class="text-3xl font-bold text-purple-400" id="stat-total">0</span>
+                <span class="text-xs text-gray-400 uppercase tracking-widest mt-1">Total Items</span>
+            </div>
+            <div class="glass p-6 rounded-2xl flex flex-col items-center border-l-4 border-red-500">
+                <span class="text-3xl font-bold text-red-400" id="stat-weak">0</span>
+                <span class="text-xs text-gray-400 uppercase tracking-widest mt-1">Weak</span>
+            </div>
+            <div class="glass p-6 rounded-2xl flex flex-col items-center border-l-4 border-yellow-500">
+                <span class="text-3xl font-bold text-yellow-400" id="stat-reused">0</span>
+                <span class="text-xs text-gray-400 uppercase tracking-widest mt-1">Reused</span>
+            </div>
+            <div class="glass p-6 rounded-2xl flex flex-col items-center border-l-4 border-green-500">
+                <span class="text-3xl font-bold text-green-400" id="stat-secure">0</span>
+                <span class="text-xs text-gray-400 uppercase tracking-widest mt-1">Vault Health</span>
+            </div>
+        </div>
+
+        <!-- Master Password Lock Overlay -->
+        <div id="lock-overlay" class="glass rounded-3xl p-12 text-center max-w-md mx-auto my-20">
+            <div class="w-16 h-16 bg-purple-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
+                <svg class="w-8 h-8 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z">
+                    </path>
+                </svg>
+            </div>
+            <h2 class="text-2xl font-bold mb-2">Vault Encrypted</h2>
+            <p class="text-gray-400 mb-8 text-sm">Enter your Master Password to unlock your credentials.</p>
+            <input type="password" id="master-pwd"
+                class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 mb-4 focus:outline-none focus:border-purple-500 transition-all text-center"
+                placeholder="••••••••••••">
+            <button onclick="unlockVault()"
+                class="w-full nebula-grad py-3 rounded-xl font-bold hover:opacity-90 transition-all shadow-lg shadow-purple-500/20">Unlock
+                Vault</button>
+        </div>
+
+        <!-- Vault Content (Hidden initially) -->
+        <div id="vault-content" class="hidden animate-in fade-in transition-all duration-500">
+            <div class="flex justify-between items-center mb-8">
+                <h3 class="text-xl font-bold flex items-center">
+                    <span class="w-2 h-8 nebula-grad rounded-full mr-3"></span>
+                    My Credentials
+                </h3>
+                <div class="flex space-x-4">
+                    <button onclick="exportVault()"
+                        class="px-6 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-white/5 font-bold text-sm transition-all focus:outline-none">Secure
+                        Backup (CSV)</button>
+                    <button onclick="toggleModal('add-modal', true)"
+                        class="px-6 py-2 rounded-xl nebula-grad font-bold text-sm shadow-lg shadow-purple-500/20">Add
+                        New Key</button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="credential-grid">
+                <!-- Credentials will be loaded here -->
+            </div>
+        </div>
+    </main>
+
+    <!-- Add Modal -->
+    <div id="add-modal"
+        class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] hidden items-center justify-center p-4">
+        <div class="glass max-w-lg w-full rounded-3xl p-8 animate-in zoom-in-95 duration-200">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold">New Credential</h2>
+                <button onclick="toggleModal('add-modal', false)" class="text-gray-400 hover:text-white">✕</button>
+            </div>
+
+            <form id="add-cred-form" class="space-y-4">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-xs font-bold text-gray-400 uppercase tracking-widest pl-1">Service
+                            Name</label>
+                        <input type="text" id="add-service" required
+                            class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 mt-1 focus:outline-none focus:border-purple-500"
+                            placeholder="e.g. Gmail">
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-gray-400 uppercase tracking-widest pl-1">Website
+                            URL</label>
+                        <input type="url" id="add-url"
+                            class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 mt-1 focus:outline-none focus:border-purple-500"
+                            placeholder="https://...">
+                    </div>
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-gray-400 uppercase tracking-widest pl-1">Username /
+                        Email</label>
+                    <input type="text" id="add-user" required
+                        class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 mt-1 focus:outline-none focus:border-purple-500"
+                        placeholder="user@example.com">
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-gray-400 uppercase tracking-widest pl-1">Password</label>
+                    <div class="relative">
+                        <input type="password" id="add-pass" required
+                            class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 mt-1 focus:outline-none focus:border-purple-500"
+                            placeholder="••••••••">
+                        <button type="button" onclick="generateRandomPass()"
+                            class="absolute right-2 top-2 p-1 text-purple-400 hover:text-purple-300">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
+                                </path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-gray-400 uppercase tracking-widest pl-1">Secure Notes
+                        (Optional)</label>
+                    <textarea id="add-notes"
+                        class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 mt-1 focus:outline-none focus:border-purple-500 h-24"
+                        placeholder="Recovery codes, etc."></textarea>
+                </div>
+                <button type="submit"
+                    class="w-full nebula-grad py-4 rounded-xl font-bold shadow-lg shadow-purple-500/20 mt-4">Safe Store
+                    in Vault</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = "http://127.0.0.1:8000";
+        const token = localStorage.getItem('token');
+        let currentMasterPassword = "";
+        let currentCredentials = [];
+
+        if (!token) window.location.href = "index.html";
+
+        function toggleModal(id, show) {
+            document.getElementById(id).classList.toggle('hidden', !show);
+            document.getElementById(id).classList.toggle('flex', show);
+        }
+
+        async function unlockVault() {
+            const pwd = document.getElementById('master-pwd').value;
+            console.log("[VAULT] Unlock attempted");
+            if (!pwd) return alert("Enter master password");
+
+            currentMasterPassword = pwd;
+            await loadVault();
+        }
+
+        async function loadVault() {
+            try {
+                console.log("[VAULT] Fetching data...");
+                // 1. Get Audit Stats
+                console.log("[VAULT] Requesting audit stats...");
+                const auditRes = await fetch(`${API_URL}/vault/audit`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ master_password: currentMasterPassword })
+                });
+
+                if (!auditRes.ok) {
+                    const errData = await auditRes.json();
+                    console.error("[VAULT ERROR] Audit failed:", errData);
+                    throw new Error(errData.detail || "Audit Failed");
+                }
+                const auditData = await auditRes.json();
+                console.log("[VAULT] Audit data received:", auditData);
+
+                // 2. Fetch Credentials
+                console.log("[VAULT] Requesting credentials list...");
+                const res = await fetch(`${API_URL}/vault/list`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ master_password: currentMasterPassword })
+                });
+
+                if (!res.ok) {
+                    const errData = await res.json();
+                    console.error("[VAULT ERROR] Vault list failed:", errData);
+                    throw new Error(errData.detail || "Vault List Failed");
+                }
+                const credentials = await res.json();
+                currentCredentials = credentials;
+                console.log("[VAULT] Credentials received:", credentials);
+
+                // Update UI only if both succeeded
+                document.getElementById('stat-total').innerText = auditData.stats.total;
+                document.getElementById('stat-weak').innerText = auditData.stats.weak;
+                document.getElementById('stat-reused').innerText = auditData.stats.reused;
+                document.getElementById('stat-secure').innerText = `${auditData.health_score}%`;
+                renderCredentials(credentials);
+
+                document.getElementById('lock-overlay').classList.add('hidden');
+                document.getElementById('vault-content').classList.remove('hidden');
+                console.log("[VAULT] Access Granted");
+            } catch (err) {
+                console.error("[VAULT ERROR]", err);
+                alert(err.message || "Failed to unlock vault. Check master password.");
+                currentMasterPassword = ""; // Reset master password on failure
+            }
+        }
+
+        async function exportVault() {
+            console.log("[BUTTON] Secure Backup (CSV) clicked");
+            try {
+                console.log("[VAULT] Requesting vault export...");
+                const res = await fetch(`${API_URL}/vault/export`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ master_password: currentMasterPassword })
+                });
+
+                if (!res.ok) throw await res.json();
+
+                const blob = await res.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = "stegavault_export.csv";
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+            } catch (err) {
+                alert("Export failed. Please check your master password.");
+            }
+        }
+
+        function renderCredentials(creds) {
+            const grid = document.getElementById('credential-grid');
+            grid.innerHTML = creds.map(c => `
+                <div class="glass p-6 rounded-2xl card-hover transition-all relative border-t-2 ${c.health_score > 70 ? 'border-green-500/50' : 'border-red-500/50'}">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="w-10 h-10 nebula-grad/20 rounded-xl flex items-center justify-center">
+                            <span class="text-xl font-bold text-purple-400">${c.service_name[0].toUpperCase()}</span>
+                        </div>
+                        <div class="flex space-x-2">
+                            <button data-cred-id="${c.id}" class="copy-btn p-2 bg-slate-800 rounded-lg hover:text-purple-400 transition-colors" title="Copy Password">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                            </button>
+                            <button data-cred-id="${c.id}" class="delete-btn p-2 bg-slate-800 rounded-lg hover:text-red-400 transition-colors" title="Delete Credential">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                            </button>
+                        </div>
+                    </div>
+                    <h4 class="text-lg font-bold truncate">${c.service_name}</h4>
+                    <p class="text-sm text-gray-400 mb-4 truncate">${c.username}</p>
+                    
+                    <div class="flex items-center space-x-2">
+                        <div class="flex-1 bg-slate-900 rounded-lg p-2 text-xs font-mono text-gray-500">••••••••••••</div>
+                        <button data-cred-id="${c.id}" class="toggle-btn text-purple-400 hover:text-purple-300 text-xs font-bold uppercase tracking-wider">Show</button>
+                    </div>
+                </div>
+            `).join('');
+
+            // Attach event listeners
+            grid.querySelectorAll('.copy-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const id = parseInt(btn.getAttribute('data-cred-id'));
+                    const cred = currentCredentials.find(item => item.id === id);
+                    if (cred) copyToClipboard(cred.password);
+                });
+            });
+
+            grid.querySelectorAll('.delete-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const id = parseInt(btn.getAttribute('data-cred-id'));
+                    deleteCredential(id);
+                });
+            });
+
+            grid.querySelectorAll('.toggle-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const id = parseInt(btn.getAttribute('data-cred-id'));
+                    const cred = currentCredentials.find(item => item.id === id);
+                    if (cred) togglePassword(btn, cred.password);
+                });
+            });
+        }
+
+        async function deleteCredential(id) {
+            if (!confirm("Are you sure? This action is irreversible.")) return;
+            try {
+                const res = await fetch(`${API_URL}/vault/delete/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.ok) loadVault();
+            } catch (err) { alert("Deletion failed"); }
+        }
+
+        document.getElementById('add-cred-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const data = {
+                service_name: document.getElementById('add-service').value,
+                username: document.getElementById('add-user').value,
+                password: document.getElementById('add-pass').value,
+                url: document.getElementById('add-url').value,
+                notes: document.getElementById('add-notes').value,
+                master_password: currentMasterPassword
+            };
+
+            try {
+                const res = await fetch(`${API_URL}/vault/add`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                if (res.ok) {
+                    toggleModal('add-modal', false);
+                    document.getElementById('add-cred-form').reset();
+                    loadVault();
+                } else {
+                    const err = await res.json();
+                    alert(err.detail || "Store failed");
+                }
+            } catch (err) { alert("Stored failed"); }
+        });
+
+        function generateRandomPass() {
+            const length = 16;
+            const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+";
+            let retVal = "";
+            for (let i = 0, n = charset.length; i < length; ++i) {
+                retVal += charset.charAt(Math.floor(Math.random() * n));
+            }
+            document.getElementById('add-pass').value = retVal;
+        }
+
+        function togglePassword(btn, pass) {
+            const div = btn.previousElementSibling;
+            if (btn.innerText === "SHOW") {
+                div.innerText = pass;
+                btn.innerText = "HIDE";
+                div.classList.remove('text-gray-500');
+                div.classList.add('text-indigo-400');
+            } else {
+                div.innerText = "••••••••••••";
+                btn.innerText = "SHOW";
+                div.classList.add('text-gray-500');
+                div.classList.remove('text-indigo-400');
+            }
+        }
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => alert("Copied to clipboard!"));
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            window.location.href = "index.html";
+        }
+    </script>
+</body>
+
+</html>

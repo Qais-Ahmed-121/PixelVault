@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StegaVault | Multi-Media Steganography</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+        }
+
+        .nebula-grad {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #c026d3 100%);
+        }
+
+        .glass {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .mode-btn.active {
+            background: #7c3aed;
+            color: white;
+            box-shadow: 0 0 20px rgba(124, 58, 237, 0.4);
+        }
+    </style>
+</head>
+
+<body class="min-h-screen pb-20">
+    <nav class="glass px-8 py-5 flex justify-between items-center mb-12">
+        <h1 class="text-2xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
+            Steganography Hub</h1>
+        <div class="flex items-center space-x-6">
+            <a href="dashboard.html" class="text-gray-400 hover:text-white transition-colors">Command Center</a>
+            <a href="vault.html" class="text-gray-400 hover:text-white transition-colors">Vault</a>
+        </div>
+    </nav>
+
+    <main class="max-w-6xl mx-auto px-6">
+        <!-- Mode Toggle -->
+        <div class="glass p-2 rounded-2xl flex max-w-md mx-auto mb-12">
+            <button onclick="setMode('image')" id="mode-image"
+                class="mode-btn active flex-1 py-3 rounded-xl font-bold transition-all">Image</button>
+            <button onclick="setMode('audio')" id="mode-audio"
+                class="mode-btn flex-1 py-3 rounded-xl font-bold text-gray-400 transition-all">Audio</button>
+            <button onclick="setMode('video')" id="mode-video"
+                class="mode-btn flex-1 py-3 rounded-xl font-bold text-gray-400 transition-all">Video</button>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Embed Section -->
+            <section class="glass p-10 rounded-[2.5rem]">
+                <h3 class="text-2xl font-bold mb-6 flex items-center">
+                    <span class="w-2 h-8 bg-indigo-500 rounded-full mr-3"></span>
+                    Embed Secret
+                </h3>
+                <form id="embed-form" class="space-y-6">
+                    <div>
+                        <label class="text-xs font-bold text-gray-400 uppercase tracking-widest block mb-2 pl-1">Carrier
+                            File</label>
+                        <input type="file" id="embed-file" required
+                            class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 focus:outline-none focus:border-indigo-500">
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-gray-400 uppercase tracking-widest block mb-2 pl-1">Secret
+                            Message</label>
+                        <textarea id="embed-msg" required
+                            class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 h-32 focus:outline-none focus:border-indigo-500"
+                            placeholder="Type your hidden message here..."></textarea>
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-gray-400 uppercase tracking-widest block mb-2 pl-1">Access
+                            Password</label>
+                        <input type="password" id="embed-pass" required
+                            class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500"
+                            placeholder="••••••••">
+                    </div>
+                    <button type="submit"
+                        class="w-full nebula-grad py-4 rounded-xl font-bold shadow-lg shadow-purple-500/20">Process &
+                        Download</button>
+                </form>
+            </section>
+
+            <!-- Extract Section -->
+            <section class="glass p-10 rounded-[2.5rem]">
+                <h3 class="text-2xl font-bold mb-6 flex items-center">
+                    <span class="w-2 h-8 bg-pink-500 rounded-full mr-3"></span>
+                    Extract Secret
+                </h3>
+                <form id="extract-form" class="space-y-6">
+                    <div>
+                        <label class="text-xs font-bold text-gray-400 uppercase tracking-widest block mb-2 pl-1">Stego
+                            File</label>
+                        <input type="file" id="extract-file" required
+                            class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 focus:outline-none focus:border-pink-500">
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-gray-400 uppercase tracking-widest block mb-2 pl-1">Master
+                            Password</label>
+                        <input type="password" id="extract-pass" required
+                            class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500"
+                            placeholder="••••••••">
+                    </div>
+                    <button type="submit"
+                        class="w-full bg-slate-800 border border-white/5 py-4 rounded-xl font-bold hover:bg-slate-700 transition-all">Retrieve
+                        Message</button>
+                </form>
+
+                <div id="result-box"
+                    class="hidden mt-8 p-6 bg-indigo-500/10 border border-indigo-500/20 rounded-2xl animate-in zoom-in-95">
+                    <span class="text-xs font-bold text-indigo-400 uppercase tracking-widest">Decrypted Payload:</span>
+                    <p id="result-text" class="mt-2 text-lg font-bold text-white leading-relaxed"></p>
+                </div>
+            </section>
+        </div>
+
+        <!-- History Hub -->
+        <div class="mt-12 glass p-10 rounded-[2.5rem]">
+            <h3 class="text-xl font-bold mb-6">Recent Operations</h3>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm">
+                    <thead>
+                        <tr class="text-gray-500 border-b border-white/5">
+                            <th class="pb-4 font-bold uppercase tracking-wider">Type</th>
+                            <th class="pb-4 font-bold uppercase tracking-wider">Description</th>
+                            <th class="pb-4 font-bold uppercase tracking-wider">Timestamp</th>
+                            <th class="pb-4 font-bold uppercase tracking-wider">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="history-body" class="divide-y divide-white/5">
+                        <!-- History items -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const API_URL = "http://127.0.0.1:8000";
+        const token = localStorage.getItem('token');
+        if (!token) window.location.href = "index.html";
+        let currentMode = 'image';
+
+        function setMode(mode) {
+            currentMode = mode;
+            document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active', 'text-white'));
+            document.getElementById(`mode-${mode}`).classList.add('active', 'text-white');
+
+            // Update file accepts
+            const ef = document.getElementById('embed-file');
+            const xf = document.getElementById('extract-file');
+            if (mode === 'image') { ef.accept = "image/*"; xf.accept = "image/png"; }
+            else if (mode === 'audio') { ef.accept = ".wav"; xf.accept = ".wav"; }
+            else if (mode === 'video') { ef.accept = ".mp4,.avi"; xf.accept = ".avi"; }
+        }
+
+        document.getElementById('embed-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData();
+            formData.append('file', document.getElementById('embed-file').files[0]);
+            formData.append('message', document.getElementById('embed-msg').value);
+            formData.append('password', document.getElementById('embed-pass').value);
+
+            try {
+                const res = await fetch(`${API_URL}/embed/${currentMode}`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` },
+                    body: formData
+                });
+                if (!res.ok) throw await res.json();
+
+                const blob = await res.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `stegavault_${currentMode}_result`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                loadHistory();
+            } catch (err) {
+                console.error("[EMBED ERROR]", err);
+                alert(err.detail || "Processing failed. Ensure file size < 5MB and format is supported.");
+            }
+        });
+
+        document.getElementById('extract-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData();
+            formData.append('file', document.getElementById('extract-file').files[0]);
+            formData.append('password', document.getElementById('extract-pass').value);
+
+            try {
+                const res = await fetch(`${API_URL}/extract/${currentMode}`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` },
+                    body: formData
+                });
+                if (!res.ok) throw await res.json();
+
+                const data = await res.json();
+                document.getElementById('result-text').innerText = data.message;
+                document.getElementById('result-box').classList.remove('hidden');
+                loadHistory();
+            } catch (err) {
+                console.error("[EXTRACT ERROR]", err);
+                alert("Extraction failed. Wrong master password or the file does not contain a StegaVault secret.");
+            }
+        });
+
+        async function loadHistory() {
+            const res = await fetch(`${API_URL}/stego/history`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const history = await res.json();
+            const body = document.getElementById('history-body');
+            body.innerHTML = history.reverse().slice(0, 10).map(h => `
+                <tr class="hover:bg-white/5 transition-colors">
+                    <td class="py-4 font-bold text-indigo-400">${h.operation_type.toUpperCase()}</td>
+                    <td class="py-4 text-gray-400">${h.description}</td>
+                    <td class="py-4 text-gray-500 text-xs">${new Date(h.created_at).toLocaleString()}</td>
+                    <td class="py-4">
+                        ${h.media_file_id ? `<button onclick="downloadFile(${h.media_file_id})" class="text-purple-400 hover:underline">Download</button>` : 'N/A'}
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        async function downloadFile(id) {
+            const res = await fetch(`${API_URL}/stego/download/${id}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const blob = await res.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = "stegavault_history_item";
+            a.click();
+        }
+
+        loadHistory();
+    </script>
+</body>
+
+</html>

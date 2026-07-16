@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StegaVault | Dashboard Hub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+        }
+
+        .nebula-grad {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #c026d3 100%);
+        }
+
+        .glass {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .feature-card:hover {
+            transform: translateY(-8px);
+            border-color: #a855f7;
+            box-shadow: 0 20px 40px -10px rgba(124, 58, 237, 0.2);
+        }
+    </style>
+</head>
+
+<body class="min-h-screen pb-20">
+    <!-- Navbar -->
+    <nav class="glass sticky top-0 z-50 px-8 py-5 flex justify-between items-center mb-16">
+        <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 nebula-grad rounded-xl flex items-center justify-center">
+                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z">
+                    </path>
+                </svg>
+            </div>
+            <h1 class="text-2xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
+                StegaVault</h1>
+        </div>
+        <div class="flex items-center space-x-8 text-sm font-semibold">
+            <span class="text-gray-400">Welcome, <span id="user-display"
+                    class="text-white font-bold">Agent</span></span>
+            <button onclick="logout()"
+                class="px-5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 transition-all border border-white/5">Logout</button>
+        </div>
+    </nav>
+
+    <main class="max-w-6xl mx-auto px-6">
+        <!-- Hero Section -->
+        <div class="text-center mb-20 animate-in fade-in slide-in-from-bottom-5 duration-700">
+            <h2 class="text-5xl font-black mb-4">Command Center</h2>
+            <p class="text-gray-400 max-w-2xl mx-auto">Access your secure multi-media steganography tools and fully
+                encrypted password management vault from one central location.</p>
+        </div>
+
+        <!-- Modules Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <!-- Steganography Hub -->
+            <a href="stego.html"
+                class="glass p-10 rounded-[2.5rem] feature-card transition-all border border-white/5 flex flex-col items-center group">
+                <div
+                    class="w-20 h-20 bg-indigo-500/10 rounded-3xl flex items-center justify-center mb-6 border border-indigo-500/20 group-hover:bg-indigo-500/20 transition-all">
+                    <svg class="w-10 h-10 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z">
+                        </path>
+                    </svg>
+                </div>
+                <h3 class="text-2xl font-bold mb-3">Steganography</h3>
+                <p class="text-center text-sm text-gray-400 leading-relaxed">Hide encrypted secrets in Images, Audio,
+                    and Video files with LSB technology.</p>
+                <div class="mt-8 flex items-center text-indigo-400 font-bold text-xs uppercase tracking-widest">
+                    Enter Dashboard
+                    <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+                    </svg>
+                </div>
+            </a>
+
+            <!-- Credential Vault -->
+            <a href="vault.html"
+                class="glass p-10 rounded-[2.5rem] feature-card transition-all border border-white/5 flex flex-col items-center group">
+                <div
+                    class="w-20 h-20 bg-purple-500/10 rounded-3xl flex items-center justify-center mb-6 border border-purple-500/20 group-hover:bg-purple-500/20 transition-all">
+                    <svg class="w-10 h-10 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z">
+                        </path>
+                    </svg>
+                </div>
+                <h3 class="text-2xl font-bold mb-3">Password Vault</h3>
+                <p class="text-center text-sm text-gray-400 leading-relaxed">AES-256-GCM encrypted storage for your
+                    credentials and TOTP keys.</p>
+                <div class="mt-8 flex items-center text-purple-400 font-bold text-xs uppercase tracking-widest">
+                    Unlock Vault
+                    <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+                    </svg>
+                </div>
+            </a>
+
+            <!-- Security Auditor -->
+            <a href="audit.html"
+                class="glass p-10 rounded-[2.5rem] feature-card transition-all border border-white/5 flex flex-col items-center group">
+                <div
+                    class="w-20 h-20 bg-red-500/10 rounded-3xl flex items-center justify-center mb-6 border border-red-500/20 group-hover:bg-red-500/20 transition-all">
+                    <svg class="w-10 h-10 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z">
+                        </path>
+                    </svg>
+                </div>
+                <h3 class="text-2xl font-bold mb-3">Security Audit</h3>
+                <p class="text-center text-sm text-gray-400 leading-relaxed">Automated scan for weak passwords and
+                    credential reuse patterns.</p>
+                <div class="mt-8 flex items-center text-red-400 font-bold text-xs uppercase tracking-widest">
+                    Scan Safety
+                    <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+                    </svg>
+                </div>
+            </a>
+
+            <!-- Quantum Generator -->
+            <a href="generator.html"
+                class="glass p-10 rounded-[2.5rem] feature-card transition-all border border-white/5 flex flex-col items-center group">
+                <div
+                    class="w-20 h-20 bg-pink-500/10 rounded-3xl flex items-center justify-center mb-6 border border-pink-500/20 group-hover:bg-pink-500/20 transition-all">
+                    <svg class="w-10 h-10 text-pink-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.693.315a4 4 0 01-1.59.349h-.567a2 2 0 01-1.022-.547l-1.428-1.428a2 2 0 01-.547-1.022v-.567a4 4 0 01.349-1.59l.315-.693a6 6 0 00.517-3.86l-.477-2.387a2 2 0 00-.547-1.022L10 2.292m0 0L8.292 4m1.708-1.708L11.708 4M10 21l-1.708-1.708M10 21l1.708-1.708M3 10l1.708-1.708M3 10l1.708 1.708m12.584 10a11.956 11.956 0 01-1.708-1.708m0 0L15.176 19M16.416 20l1.708-1.708">
+                        </path>
+                    </svg>
+                </div>
+                <h3 class="text-2xl font-bold mb-3">Generator</h3>
+                <p class="text-center text-sm text-gray-400 leading-relaxed">Create high-entropy random or smart-keyword
+                    based secure passwords.</p>
+                <div class="mt-8 flex items-center text-pink-400 font-bold text-xs uppercase tracking-widest">
+                    Create Keys
+                    <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+                    </svg>
+                </div>
+            </a>
+
+            <!-- Secure Notes -->
+            <a href="notes.html"
+                class="glass p-10 rounded-[2.5rem] feature-card transition-all border border-white/5 flex flex-col items-center group">
+                <div
+                    class="w-20 h-20 bg-cyan-500/10 rounded-3xl flex items-center justify-center mb-6 border border-cyan-500/20 group-hover:bg-cyan-500/20 transition-all">
+                    <svg class="w-10 h-10 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z">
+                        </path>
+                    </svg>
+                </div>
+                <h3 class="text-2xl font-bold mb-3">Secure Notes</h3>
+                <p class="text-center text-sm text-gray-400 leading-relaxed">Store private text snippets, recovery keys,
+                    and sensitive memos securely.</p>
+                <div class="mt-8 flex items-center text-cyan-400 font-bold text-xs uppercase tracking-widest">
+                    View Notes
+                    <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+                    </svg>
+                </div>
+            </a>
+        </div>
+    </main>
+
+    <script>
+        if (!localStorage.getItem('token')) window.location.href = "index.html";
+        document.getElementById('user-display').innerText = localStorage.getItem('username') || "Agent";
+        function logout() { localStorage.removeItem('token'); window.location.href = "index.html"; }
+    </script>
+</body>
+
+</html>

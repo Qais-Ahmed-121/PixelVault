@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StegaVault | Secure Notes</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+        }
+
+        .nebula-grad {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #c026d3 100%);
+        }
+
+        .glass {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .note-card:hover {
+            border-color: #a855f7;
+            background: rgba(30, 41, 59, 0.9);
+        }
+    </style>
+</head>
+
+<body class="min-h-screen pb-12">
+    <nav class="glass sticky top-0 z-50 px-6 py-4 flex justify-between items-center mb-12">
+        <div class="flex items-center space-x-2">
+            <h1 class="text-2xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
+                Secure Notes</h1>
+        </div>
+        <div class="flex items-center space-x-6 text-sm font-semibold">
+            <a href="vault.html" class="text-gray-400 hover:text-white transition-colors">Credential Vault</a>
+            <a href="dashboard.html" class="text-gray-400 hover:text-white transition-colors">Stego Home</a>
+            <button onclick="logout()"
+                class="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 transition-all">Logout</button>
+        </div>
+    </nav>
+
+    <main class="max-w-4xl mx-auto px-6">
+        <!-- Master Password Lock Overlay -->
+        <div id="lock-overlay" class="glass rounded-3xl p-12 text-center max-w-md mx-auto my-20">
+            <h2 class="text-2xl font-bold mb-2">Notes Locked</h2>
+            <p class="text-gray-400 mb-8 text-sm">Enter Master Password to decrypt your private notes.</p>
+            <input type="password" id="master-pwd"
+                class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 mb-4 focus:outline-none focus:border-purple-500"
+                placeholder="Master Password">
+            <button onclick="unlockNotes()" class="w-full nebula-grad py-3 rounded-xl font-bold shadow-lg">Unlock
+                Notes</button>
+        </div>
+
+        <!-- Notes Content -->
+        <div id="notes-content" class="hidden">
+            <div class="flex justify-between items-center mb-8">
+                <h3 class="text-xl font-bold">Your Private Notes</h3>
+                <button onclick="toggleModal('add-modal', true)"
+                    class="px-6 py-2 rounded-xl nebula-grad font-bold text-sm">Create Note</button>
+            </div>
+
+            <div class="space-y-4" id="notes-list">
+                <!-- Notes will appear here -->
+            </div>
+        </div>
+    </main>
+
+    <!-- Add Note Modal -->
+    <div id="add-modal"
+        class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] hidden items-center justify-center p-4">
+        <div class="glass max-w-lg w-full rounded-2xl p-8">
+            <h2 class="text-2xl font-bold mb-6">New Secure Note</h2>
+            <form id="add-note-form" class="space-y-4">
+                <input type="text" id="note-title" required
+                    class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500"
+                    placeholder="Note Title">
+                <textarea id="note-content" required
+                    class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 h-48 focus:outline-none focus:border-purple-500"
+                    placeholder="Type your sensitive information here..."></textarea>
+                <div class="flex space-x-4">
+                    <button type="button" onclick="toggleModal('add-modal', false)"
+                        class="flex-1 px-4 py-3 rounded-xl bg-slate-800 font-bold">Cancel</button>
+                    <button type="submit" class="flex-2 px-8 py-3 rounded-xl nebula-grad font-bold shadow-lg">Save
+                        Encrypted</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = "http://127.0.0.1:8000";
+        const token = localStorage.getItem('token');
+        if (!token) window.location.href = "index.html";
+        let currentMasterPassword = "";
+        let currentNotes = [];
+
+        async function unlockNotes() {
+            const pwd = document.getElementById('master-pwd').value;
+            console.log("[NOTES] Unlock attempted");
+            if (!pwd) return alert("Password required");
+            currentMasterPassword = pwd;
+            await loadNotes();
+        }
+
+        async function loadNotes() {
+            try {
+                console.log("[NOTES] Loading notes...");
+                const res = await fetch(`${API_URL}/notes/list`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ master_password: currentMasterPassword })
+                });
+
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.detail || "Authentication Failed");
+                }
+
+                const notes = await res.json();
+                currentNotes = notes;
+                console.log("[NOTES] Decrypted notes received:", notes.length);
+                renderNotes(notes);
+
+                document.getElementById('lock-overlay').classList.add('hidden');
+                document.getElementById('notes-content').classList.remove('hidden');
+            } catch (err) {
+                console.error("[NOTES ERROR]", err);
+                alert(err.message || "Incorrect Master Password or connection lost.");
+                currentMasterPassword = "";
+            }
+        }
+
+        function renderNotes(notes) {
+            const list = document.getElementById('notes-list');
+            list.innerHTML = notes.map(n => `
+                <div class="glass p-6 rounded-2xl note-card transition-all group">
+                    <div class="flex justify-between items-start mb-2">
+                        <h4 class="text-lg font-bold text-purple-400">${n.title}</h4>
+                        <button data-note-id="${n.id}" class="delete-btn text-gray-500 hover:text-red-400 group-hover:block hidden transition-all">✕</button>
+                    </div>
+                    <p class="text-gray-300 whitespace-pre-wrap text-sm leading-relaxed">${n.content}</p>
+                    <div class="mt-4 pt-4 border-t border-white/5 text-[10px] text-gray-500 uppercase tracking-tighter">
+                        Last Updated: ${new Date(n.updated_at).toLocaleString()}
+                    </div>
+                </div>
+            `).join('');
+
+            // Attach event listeners
+            list.querySelectorAll('.delete-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const id = parseInt(btn.getAttribute('data-note-id'));
+                    deleteNote(id);
+                });
+            });
+        }
+
+        document.getElementById('add-note-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const data = {
+                title: document.getElementById('note-title').value,
+                content: document.getElementById('note-content').value,
+                master_password: currentMasterPassword
+            };
+
+            const res = await fetch(`${API_URL}/notes/add`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            });
+
+            if (res.ok) {
+                toggleModal('add-modal', false);
+                document.getElementById('add-note-form').reset();
+                loadNotes();
+            } else {
+                const err = await res.json();
+                alert(err.detail || "Failed to save encrypted note.");
+            }
+        });
+
+        async function deleteNote(id) {
+            if (confirm("Delete this secret note?")) {
+                await fetch(`${API_URL}/notes/delete/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                loadNotes();
+            }
+        }
+
+        function toggleModal(id, show) {
+            document.getElementById(id).classList.toggle('hidden', !show);
+            document.getElementById(id).classList.toggle('flex', show);
+        }
+
+        function logout() { localStorage.removeItem('token'); window.location.href = "index.html"; }
+    </script>
+</body>
+
+</html>

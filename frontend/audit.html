@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StegaVault | Security Audit</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+        }
+
+        .nebula-grad {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #c026d3 100%);
+        }
+
+        .glass {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .circular-progress {
+            background: conic-gradient(#7c3aed var(--progress), #1e293b 0deg);
+            border-radius: 50%;
+            width: 200px;
+            height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: --progress 0.5s ease;
+        }
+
+        .circular-progress::before {
+            content: "";
+            position: absolute;
+            width: 170px;
+            height: 170px;
+            background: #0f172a;
+            border-radius: 50%;
+        }
+    </style>
+</head>
+
+<body class="min-h-screen pb-12">
+    <nav class="glass px-6 py-4 flex justify-between items-center mb-12">
+        <h1 class="text-2xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
+            Security Audit</h1>
+        <div class="flex items-center space-x-6">
+            <a href="vault.html" class="text-gray-400 hover:text-white transition-colors">Credential Vault</a>
+            <a href="dashboard.html" class="text-gray-400 hover:text-white transition-colors">Dashboard</a>
+        </div>
+    </nav>
+
+    <main class="max-w-4xl mx-auto px-6">
+        <!-- Master Password Lock Overlay -->
+        <div id="lock-overlay" class="glass rounded-3xl p-12 text-center max-w-md mx-auto my-10">
+            <h2 class="text-2xl font-bold mb-2">Audit Locked</h2>
+            <p class="text-gray-400 mb-8 text-sm">We need your Master Password to audit your encrypted passwords
+                locally.</p>
+            <input type="password" id="master-pwd"
+                class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 mb-4 focus:outline-none focus:border-purple-500"
+                placeholder="Master Password">
+            <button onclick="runAudit()" class="w-full nebula-grad py-3 rounded-xl font-bold shadow-lg">Start Security
+                Scan</button>
+        </div>
+
+        <!-- Audit Content -->
+        <div id="audit-content" class="hidden animate-in fade-in duration-700">
+            <div class="flex flex-col md:flex-row items-center justify-between mb-12 p-8 glass rounded-3xl">
+                <div class="relative mb-8 md:mb-0">
+                    <div id="score-ring" class="circular-progress" style="--progress: 0deg;">
+                        <span id="health-score" class="relative z-10 text-5xl font-bold text-white">0%</span>
+                    </div>
+                </div>
+                <div class="md:ml-12 flex-1 space-y-4 text-center md:text-left">
+                    <h2 class="text-3xl font-bold">Vault Health Store</h2>
+                    <p class="text-gray-400 leading-relaxed">Our Quantum Audit engine has scanned your credentials for
+                        strength, length, and reuse patterns. Here is your current security status.</p>
+                    <div class="flex flex-wrap gap-4 justify-center md:justify-start">
+                        <div class="bg-indigo-500/10 px-4 py-2 rounded-lg border border-indigo-500/20">
+                            <span class="block text-xs uppercase text-indigo-400 font-bold">Total Items</span>
+                            <span id="stat-total" class="text-xl font-bold">0</span>
+                        </div>
+                        <div class="bg-red-500/10 px-4 py-2 rounded-lg border border-red-500/20">
+                            <span class="block text-xs uppercase text-red-400 font-bold">Critical Risks</span>
+                            <span id="stat-risks" class="text-xl font-bold">0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <h3 class="text-xl font-bold mb-6 flex items-center">
+                <svg class="w-6 h-6 text-yellow-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z">
+                    </path>
+                </svg>
+                Risk Analysis & Alerts
+            </h3>
+
+            <div class="grid grid-cols-1 gap-4" id="alerts-container">
+                <!-- Alerts Loaded Here -->
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const API_URL = "http://127.0.0.1:8000";
+        const token = localStorage.getItem('token');
+        if (!token) window.location.href = "index.html";
+
+        async function runAudit() {
+            const mp = document.getElementById('master-pwd').value;
+            console.log("[AUDIT] Scan started");
+            if (!mp) return alert("Password required");
+
+            const res = await fetch(`${API_URL}/vault/audit`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ master_password: mp })
+            });
+
+            try {
+                if (res.ok) {
+                    const data = await res.json();
+                    console.log("[AUDIT] Scan results received");
+                    renderAudit(data);
+                    document.getElementById('lock-overlay').classList.add('hidden');
+                    document.getElementById('audit-content').classList.remove('hidden');
+                } else {
+                    const err = await res.json();
+                    console.error("[AUDIT ERROR]", err);
+                    alert(err.detail || "Incorrect Master Password");
+                }
+            } catch (err) {
+                console.error("[AUDIT FETCH ERROR]", err);
+                alert("Connection error occurred.");
+            }
+        }
+
+        function renderAudit(data) {
+            // Update Score Ring
+            const deg = (data.health_score / 100) * 360;
+            document.getElementById('score-ring').style.setProperty('--progress', `${deg}deg`);
+            document.getElementById('health-score').innerText = `${data.health_score}%`;
+
+            // Set Color based on score
+            const ring = document.getElementById('score-ring');
+            if (data.health_score > 80) ring.style.setProperty('background', `conic-gradient(#10b981 ${deg}deg, #1e293b 0deg)`);
+            else if (data.health_score > 50) ring.style.setProperty('background', `conic-gradient(#f59e0b ${deg}deg, #1e293b 0deg)`);
+            else ring.style.setProperty('background', `conic-gradient(#ef4444 ${deg}deg, #1e293b 0deg)`);
+
+            // Stats
+            document.getElementById('stat-total').innerText = data.stats.total;
+            document.getElementById('stat-risks').innerText = data.stats.weak + data.stats.reused;
+
+            // Alerts
+            const container = document.getElementById('alerts-container');
+            if (data.alerts.length === 0) {
+                container.innerHTML = `
+                    <div class="glass p-8 rounded-3xl text-center border-green-500/30">
+                        <div class="text-green-400 text-5xl mb-4">✨</div>
+                        <h4 class="text-lg font-bold text-green-400">Perfect Health!</h4>
+                        <p class="text-gray-400 text-sm">No security risks found in your vault.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = data.alerts.map(a => `
+                <div class="glass p-5 rounded-2xl flex items-center border-l-4 ${a.severity === 'CRITICAL' ? 'border-red-500' : 'border-yellow-500'}">
+                    <div class="mr-4 ${a.severity === 'CRITICAL' ? 'text-red-400' : 'text-yellow-400'}">
+                        ${a.type === 'WEAK_PASSWORD' ? '⚠️' : '♻️'}
+                    </div>
+                    <div class="flex-1">
+                        <h5 class="font-bold text-sm">${a.type.replace('_', ' ')}: ${a.service}</h5>
+                        <p class="text-xs text-gray-400">${a.severity} risk detected. Consider changing this password.</p>
+                    </div>
+                </div>
+            `).join('');
+        }
+    </script>
+</body>
+
+</html>
