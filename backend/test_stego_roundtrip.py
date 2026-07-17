@@ -82,7 +82,7 @@ def stego_roundtrip_audio(message: str) -> str:
 
 def test_image_plain_message():
     """Baseline: plain ASCII message round-trips correctly."""
-    msg = "StegaVault_2024"
+    msg = "PixelVault_2024"
     result = stego_roundtrip_image(msg)
     assert result == msg, f"Expected {msg!r}, got {result!r}"
     print(f"  ✅ plain ASCII image round-trip")

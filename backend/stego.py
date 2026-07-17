@@ -101,7 +101,7 @@ if __name__ == "__main__":
     data = np.random.randint(0, 256, (100, 100, 3), dtype=np.uint8)
     Image.fromarray(data).save(test_img_path)
     
-    secret = "StegaVault_Secret_Message_2024"
+    secret = "PixelVault_Secret_Message_2024"
     print(f"Original Secret: {secret}")
     
     try:

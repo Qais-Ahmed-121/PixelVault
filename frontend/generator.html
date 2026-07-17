@@ -4,8 +4,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>StegaVault | Quantum Generator</title>
+    <title>PixelVault | Quantum Generator</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="session-manager.js"></script>
+    <script src="crypto-service.js"></script>
+    <script src="api.js"></script>
+    <script src="auth-service.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
         body {
@@ -31,12 +35,26 @@
 </head>
 
 <body class="min-h-screen">
-    <nav class="glass px-6 py-4 flex justify-between items-center mb-12">
-        <h1 class="text-2xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
-            Quantum Generator</h1>
-        <div class="flex items-center space-x-6">
+    <nav class="glass sticky top-0 z-50 px-6 py-4 flex justify-between items-center mb-12">
+        <div class="flex items-center space-x-2">
+            <div class="w-10 h-10 nebula-grad rounded-xl flex items-center justify-center">
+                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4">
+                    </path>
+                </svg>
+            </div>
+            <h1 class="text-2xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">Quantum Generator</h1>
+        </div>
+        <div class="flex items-center space-x-5 text-sm font-semibold">
+            <a href="stego.html" class="text-gray-400 hover:text-white transition-colors">Stego Hub</a>
             <a href="vault.html" class="text-gray-400 hover:text-white transition-colors">Vault</a>
-            <a href="dashboard.html" class="text-gray-400 hover:text-white transition-colors">Stego Home</a>
+            <a href="audit.html" class="text-gray-400 hover:text-white transition-colors">Audit</a>
+            <a href="generator.html" class="text-white font-bold transition-colors">Generator</a>
+            <a href="notes.html" class="text-gray-400 hover:text-white transition-colors">Notes</a>
+            <span class="text-gray-600">|</span>
+            <a href="dashboard.html" class="text-gray-400 hover:text-white transition-colors">Dashboard</a>
+            <button onclick="window.AuthService.logout()" class="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 transition-all">Logout</button>
         </div>
     </nav>
 
@@ -179,12 +197,46 @@
         function copyPass() {
             const val = document.getElementById('pass-result').value;
             navigator.clipboard.writeText(val).then(() => {
-                alert("Password copied!");
+                showToast("Password copied!", "success");
             });
         }
 
         // Initial
         mainGenerate();
+
+        function showToast(message, type = 'success') {
+            let container = document.getElementById('toast-container');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'toast-container';
+                container.style.cssText = 'position:fixed;bottom:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:10px;';
+                document.body.appendChild(container);
+            }
+            const toast = document.createElement('div');
+            toast.style.cssText = `
+                padding: 12px 20px;
+                border-radius: 12px;
+                color: white;
+                font-family: 'Outfit', sans-serif;
+                font-size: 0.875rem;
+                font-weight: 600;
+                backdrop-filter: blur(12px);
+                background: ${type === 'success' ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)'};
+                border: 1px solid ${type === 'success' ? 'rgba(16,185,129,0.4)' : 'rgba(239,68,68,0.4)'};
+                box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+                opacity: 0;
+                transform: translateY(16px);
+                transition: all 0.3s ease;
+                max-width: 320px;
+            `;
+            toast.innerText = message;
+            container.appendChild(toast);
+            requestAnimationFrame(() => { toast.style.opacity = '1'; toast.style.transform = 'translateY(0)'; });
+            setTimeout(() => {
+                toast.style.opacity = '0'; toast.style.transform = 'translateY(-12px)';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
     </script>
 </body>
 

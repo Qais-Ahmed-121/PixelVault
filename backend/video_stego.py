@@ -138,7 +138,7 @@ if __name__ == "__main__":
         out.write(frame)
     out.release()
 
-    secret = "StegaVault_Video_LSB_2024_FrameByFrame"
+    secret = "PixelVault_Video_LSB_2024_FrameByFrame"
     print(f"Original Secret: {secret}")
     
     try:

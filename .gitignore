@@ -1,2 +1,16 @@
 # Local environment variables
 .env
+
+# Database files (both active and any stale artifacts)
+*.db
+
+# Python virtual environment
+venv/
+
+# Python bytecode cache
+__pycache__/
+*.pyc
+
+# Uploaded media files (server-generated)
+uploads/
+backend/uploads/

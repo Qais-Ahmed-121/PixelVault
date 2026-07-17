@@ -1,17 +1,17 @@
-# StegaVault: Project Presentation Report 🛡️✨
+# PixelVault: Project Presentation Report 🛡️✨
 
-**Project Title:** StegaVault - Advanced Multi-Media Steganography & Secure Vault  
+**Project Title:** PixelVault - Advanced Multi-Media Steganography & Secure Vault  
 **Field:** Information Security / Cryptography  
 **Developer:** [Your Name]
 
 ---
 
 ## 1. Project Overview
-**StegaVault** is a "Privacy-First" web application designed to protect sensitive information using two powerful techniques:
+**PixelVault** is a "Privacy-First" web application designed to protect sensitive information using two powerful techniques:
 1.  **Steganography:** Hiding secret data inside ordinary media files (Images, Audio, Video).
 2.  **Cryptography:** Storing passwords and notes in a fully encrypted digital vault.
 
-Unlike traditional lockers, StegaVault provides **deniability**. If someone sees an image, they don't know it contains a secret message.
+Unlike traditional lockers, PixelVault provides **deniability**. If someone sees an image, they don't know it contains a secret message.
 
 ---
 
@@ -95,7 +95,7 @@ This is the heart of the project. We support three types of carriers:
 ---
 
 ## 7. Conclusion
-StegaVault represents a modern approach to Information Security. By combining the stealth of Steganography with the strength of AES-256 Encryption, it provides a dual-layer defense system that is both user-friendly and highly secure.
+PixelVault represents a modern approach to Information Security. By combining the stealth of Steganography with the strength of AES-256 Encryption, it provides a dual-layer defense system that is both user-friendly and highly secure.
 
 ---
 **Presented by:** [Your Name]  

@@ -1,6 +1,6 @@
-# 🏃 How to Run StegaVault
+# 🏃 How to Run PixelVault
 
-Follow these steps to get the **StegaVault** platform up and running on your local machine.
+Follow these steps to get the **PixelVault** platform up and running on your local machine.
 
 ---
 
@@ -43,7 +43,7 @@ python backend/main.py
 
 ## 🌐 Step 3: Launch the Frontend
 
-StegaVault's frontend is a modern web interface built with vanilla HTML/JS and Tailwind CSS.
+PixelVault's frontend is a modern web interface built with vanilla HTML/JS and Tailwind CSS.
 
 1. Navigate to the `frontend` folder.
 2. Open `index.html` in your favorite web browser (Chrome, Edge, or Firefox).

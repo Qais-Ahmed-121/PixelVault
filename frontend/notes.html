@@ -4,8 +4,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>StegaVault | Secure Notes</title>
+    <title>PixelVault | Secure Notes</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="session-manager.js"></script>
+    <script src="crypto-service.js"></script>
+    <script src="api.js"></script>
+    <script src="auth-service.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
         body {
@@ -34,14 +38,24 @@
 <body class="min-h-screen pb-12">
     <nav class="glass sticky top-0 z-50 px-6 py-4 flex justify-between items-center mb-12">
         <div class="flex items-center space-x-2">
-            <h1 class="text-2xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
-                Secure Notes</h1>
+            <div class="w-10 h-10 nebula-grad rounded-xl flex items-center justify-center">
+                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z">
+                    </path>
+                </svg>
+            </div>
+            <h1 class="text-2xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">Secure Notes</h1>
         </div>
-        <div class="flex items-center space-x-6 text-sm font-semibold">
-            <a href="vault.html" class="text-gray-400 hover:text-white transition-colors">Credential Vault</a>
-            <a href="dashboard.html" class="text-gray-400 hover:text-white transition-colors">Stego Home</a>
-            <button onclick="logout()"
-                class="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 transition-all">Logout</button>
+        <div class="flex items-center space-x-5 text-sm font-semibold">
+            <a href="stego.html" class="text-gray-400 hover:text-white transition-colors">Stego Hub</a>
+            <a href="vault.html" class="text-gray-400 hover:text-white transition-colors">Vault</a>
+            <a href="audit.html" class="text-gray-400 hover:text-white transition-colors">Audit</a>
+            <a href="generator.html" class="text-gray-400 hover:text-white transition-colors">Generator</a>
+            <a href="notes.html" class="text-white font-bold transition-colors">Notes</a>
+            <span class="text-gray-600">|</span>
+            <a href="dashboard.html" class="text-gray-400 hover:text-white transition-colors">Dashboard</a>
+            <button onclick="logout()" class="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 transition-all">Logout</button>
         </div>
     </nav>
 
@@ -94,16 +108,23 @@
     </div>
 
     <script>
-        const API_URL = "http://127.0.0.1:8000";
-        const token = localStorage.getItem('token');
-        if (!token) window.location.href = "index.html";
         let currentMasterPassword = "";
         let currentNotes = [];
+
+        // Auto-unlock if valid session exists
+        document.addEventListener("DOMContentLoaded", async () => {
+            const session = window.SessionManager.getSession();
+            if (session) {
+                currentMasterPassword = session.encryptionKey;
+                await loadNotes();
+            }
+        });
 
         async function unlockNotes() {
             const pwd = document.getElementById('master-pwd').value;
             console.log("[NOTES] Unlock attempted");
-            if (!pwd) return alert("Password required");
+            if (!pwd) return showToast("Password required", "error");
+            
             currentMasterPassword = pwd;
             await loadNotes();
         }
@@ -111,14 +132,7 @@
         async function loadNotes() {
             try {
                 console.log("[NOTES] Loading notes...");
-                const res = await fetch(`${API_URL}/notes/list`, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ master_password: currentMasterPassword })
-                });
+                const res = await window.api.post('/notes/list', { master_password: currentMasterPassword });
 
                 if (!res.ok) {
                     const err = await res.json();
@@ -134,7 +148,7 @@
                 document.getElementById('notes-content').classList.remove('hidden');
             } catch (err) {
                 console.error("[NOTES ERROR]", err);
-                alert(err.message || "Incorrect Master Password or connection lost.");
+                showToast(err.message || "Incorrect Master Password or connection lost.", "error");
                 currentMasterPassword = "";
             }
         }
@@ -171,14 +185,7 @@
                 master_password: currentMasterPassword
             };
 
-            const res = await fetch(`${API_URL}/notes/add`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(data)
-            });
+            const res = await window.api.post('/notes/add', data);
 
             if (res.ok) {
                 toggleModal('add-modal', false);
@@ -186,16 +193,13 @@
                 loadNotes();
             } else {
                 const err = await res.json();
-                alert(err.detail || "Failed to save encrypted note.");
+                showToast(err.detail || "Failed to save encrypted note.", "error");
             }
         });
 
         async function deleteNote(id) {
             if (confirm("Delete this secret note?")) {
-                await fetch(`${API_URL}/notes/delete/${id}`, {
-                    method: 'DELETE',
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
+                await window.api.delete(`/notes/delete/${id}`);
                 loadNotes();
             }
         }
@@ -205,7 +209,41 @@
             document.getElementById(id).classList.toggle('flex', show);
         }
 
-        function logout() { localStorage.removeItem('token'); window.location.href = "index.html"; }
+        function logout() { window.AuthService.logout(); }
+
+        function showToast(message, type = 'success') {
+            let container = document.getElementById('toast-container');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'toast-container';
+                container.style.cssText = 'position:fixed;bottom:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:10px;';
+                document.body.appendChild(container);
+            }
+            const toast = document.createElement('div');
+            toast.style.cssText = `
+                padding: 12px 20px;
+                border-radius: 12px;
+                color: white;
+                font-family: 'Outfit', sans-serif;
+                font-size: 0.875rem;
+                font-weight: 600;
+                backdrop-filter: blur(12px);
+                background: ${type === 'success' ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)'};
+                border: 1px solid ${type === 'success' ? 'rgba(16,185,129,0.4)' : 'rgba(239,68,68,0.4)'};
+                box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+                opacity: 0;
+                transform: translateY(16px);
+                transition: all 0.3s ease;
+                max-width: 320px;
+            `;
+            toast.innerText = message;
+            container.appendChild(toast);
+            requestAnimationFrame(() => { toast.style.opacity = '1'; toast.style.transform = 'translateY(0)'; });
+            setTimeout(() => {
+                toast.style.opacity = '0'; toast.style.transform = 'translateY(-12px)';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
     </script>
 </body>
 

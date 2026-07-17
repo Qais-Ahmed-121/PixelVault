@@ -1,6 +1,6 @@
-# 🛡️ StegaVault – Advanced Multi-Media Steganography & Password Manager
+# 🛡️ PixelVault – Advanced Multi-Media Steganography & Password Manager
 
-StegaVault is a production-ready, security-hardened platform designed to protect your digital assets. It combines **Triple-Layer Multi-Media Steganography** with a **Zero-Knowledge Password Manager**.
+PixelVault is a production-ready, security-hardened platform designed to protect your digital assets. It combines **Triple-Layer Multi-Media Steganography** with a **Zero-Knowledge Password Manager**.
 
 ## 🚀 Key Modules
 
@@ -43,7 +43,7 @@ pip install -r requirements.txt
 ```
 
 ### 3. Running the App
-For detailed, step-by-step instructions, please refer to [RUNNING.md](file:///c:/Users/qaisa/OneDrive/Desktop/Sem%203/INFO%20SEC/Info%20Th/Anti%20Project/RUNNING.md).
+For detailed, step-by-step instructions, please refer to [RUNNING.md](RUNNING.md).
 
 Quick start:
 ```powershell

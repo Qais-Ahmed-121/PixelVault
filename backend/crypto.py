@@ -94,7 +94,7 @@ def decrypt_message(encrypted_payload: str, password: str) -> str:
 if __name__ == "__main__":
     # Quick Test
     pwd = "test-password"
-    msg = "Hello StegaVault!"
+    msg = "Hello PixelVault!"
     
     enc = encrypt_message(msg, pwd)
     print(f"Encrypted: {enc}")

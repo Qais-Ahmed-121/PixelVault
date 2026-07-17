@@ -4,8 +4,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>StegaVault | Secure Password Vault</title>
+    <title>PixelVault | Secure Password Vault</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="session-manager.js"></script>
+    <script src="crypto-service.js"></script>
+    <script src="api.js"></script>
+    <script src="auth-service.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
         body {
@@ -43,15 +47,17 @@
                     </path>
                 </svg>
             </div>
-            <h1 class="text-2xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
-                StegaVault Vault</h1>
+            <h1 class="text-2xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">PixelVault</h1>
         </div>
-        <div class="flex items-center space-x-6">
-            <a href="dashboard.html" class="text-gray-400 hover:text-white transition-colors">Stego Dashboard</a>
-            <a href="notes.html" class="text-gray-400 hover:text-white transition-colors">Secure Notes</a>
+        <div class="flex items-center space-x-5 text-sm font-semibold">
+            <a href="stego.html" class="text-gray-400 hover:text-white transition-colors">Stego Hub</a>
+            <a href="vault.html" class="text-white font-bold transition-colors">Vault</a>
+            <a href="audit.html" class="text-gray-400 hover:text-white transition-colors">Audit</a>
             <a href="generator.html" class="text-gray-400 hover:text-white transition-colors">Generator</a>
-            <button onclick="logout()"
-                class="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-sm font-semibold transition-all">Logout</button>
+            <a href="notes.html" class="text-gray-400 hover:text-white transition-colors">Notes</a>
+            <span class="text-gray-600">|</span>
+            <a href="dashboard.html" class="text-gray-400 hover:text-white transition-colors">Dashboard</a>
+            <button onclick="logout()" class="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-sm font-semibold transition-all">Logout</button>
         </div>
     </nav>
 
@@ -182,12 +188,17 @@
     </div>
 
     <script>
-        const API_URL = "http://127.0.0.1:8000";
-        const token = localStorage.getItem('token');
         let currentMasterPassword = "";
         let currentCredentials = [];
 
-        if (!token) window.location.href = "index.html";
+        // Auto-unlock if valid session exists
+        document.addEventListener("DOMContentLoaded", async () => {
+            const session = window.SessionManager.getSession();
+            if (session) {
+                currentMasterPassword = session.encryptionKey;
+                await loadVault();
+            }
+        });
 
         function toggleModal(id, show) {
             document.getElementById(id).classList.toggle('hidden', !show);
@@ -197,7 +208,7 @@
         async function unlockVault() {
             const pwd = document.getElementById('master-pwd').value;
             console.log("[VAULT] Unlock attempted");
-            if (!pwd) return alert("Enter master password");
+            if (!pwd) return showToast("Enter master password", "error");
 
             currentMasterPassword = pwd;
             await loadVault();
@@ -208,14 +219,7 @@
                 console.log("[VAULT] Fetching data...");
                 // 1. Get Audit Stats
                 console.log("[VAULT] Requesting audit stats...");
-                const auditRes = await fetch(`${API_URL}/vault/audit`, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ master_password: currentMasterPassword })
-                });
+                const auditRes = await window.api.post('/vault/audit', { master_password: currentMasterPassword });
 
                 if (!auditRes.ok) {
                     const errData = await auditRes.json();
@@ -227,14 +231,7 @@
 
                 // 2. Fetch Credentials
                 console.log("[VAULT] Requesting credentials list...");
-                const res = await fetch(`${API_URL}/vault/list`, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ master_password: currentMasterPassword })
-                });
+                const res = await window.api.post('/vault/list', { master_password: currentMasterPassword });
 
                 if (!res.ok) {
                     const errData = await res.json();
@@ -257,7 +254,7 @@
                 console.log("[VAULT] Access Granted");
             } catch (err) {
                 console.error("[VAULT ERROR]", err);
-                alert(err.message || "Failed to unlock vault. Check master password.");
+                showToast(err.message || "Failed to unlock vault. Check master password.", "error");
                 currentMasterPassword = ""; // Reset master password on failure
             }
         }
@@ -266,14 +263,7 @@
             console.log("[BUTTON] Secure Backup (CSV) clicked");
             try {
                 console.log("[VAULT] Requesting vault export...");
-                const res = await fetch(`${API_URL}/vault/export`, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ master_password: currentMasterPassword })
-                });
+                const res = await window.api.post('/vault/export', { master_password: currentMasterPassword });
 
                 if (!res.ok) throw await res.json();
 
@@ -281,12 +271,12 @@
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = "stegavault_export.csv";
+                a.download = "pixelvault_export.csv";
                 document.body.appendChild(a);
                 a.click();
                 a.remove();
             } catch (err) {
-                alert("Export failed. Please check your master password.");
+                showToast("Export failed. Please check your master password.", "error");
             }
         }
 
@@ -345,12 +335,9 @@
         async function deleteCredential(id) {
             if (!confirm("Are you sure? This action is irreversible.")) return;
             try {
-                const res = await fetch(`${API_URL}/vault/delete/${id}`, {
-                    method: 'DELETE',
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
+                const res = await window.api.delete(`/vault/delete/${id}`);
                 if (res.ok) loadVault();
-            } catch (err) { alert("Deletion failed"); }
+            } catch (err) { showToast("Deletion failed", "error"); }
         }
 
         document.getElementById('add-cred-form').addEventListener('submit', async (e) => {
@@ -365,14 +352,7 @@
             };
 
             try {
-                const res = await fetch(`${API_URL}/vault/add`, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(data)
-                });
+                const res = await window.api.post('/vault/add', data);
 
                 if (res.ok) {
                     toggleModal('add-modal', false);
@@ -380,9 +360,9 @@
                     loadVault();
                 } else {
                     const err = await res.json();
-                    alert(err.detail || "Store failed");
+                    showToast(err.detail || "Store failed", "error");
                 }
-            } catch (err) { alert("Stored failed"); }
+            } catch (err) { showToast("Store failed", "error"); }
         });
 
         function generateRandomPass() {
@@ -411,12 +391,45 @@
         }
 
         function copyToClipboard(text) {
-            navigator.clipboard.writeText(text).then(() => alert("Copied to clipboard!"));
+            navigator.clipboard.writeText(text).then(() => showToast("Copied to clipboard!", "success"));
         }
 
         function logout() {
-            localStorage.removeItem('token');
-            window.location.href = "index.html";
+            window.AuthService.logout();
+        }
+
+        function showToast(message, type = 'success') {
+            let container = document.getElementById('toast-container');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'toast-container';
+                container.style.cssText = 'position:fixed;bottom:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:10px;';
+                document.body.appendChild(container);
+            }
+            const toast = document.createElement('div');
+            toast.style.cssText = `
+                padding: 12px 20px;
+                border-radius: 12px;
+                color: white;
+                font-family: 'Outfit', sans-serif;
+                font-size: 0.875rem;
+                font-weight: 600;
+                backdrop-filter: blur(12px);
+                background: ${type === 'success' ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)'};
+                border: 1px solid ${type === 'success' ? 'rgba(16,185,129,0.4)' : 'rgba(239,68,68,0.4)'};
+                box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+                opacity: 0;
+                transform: translateY(16px);
+                transition: all 0.3s ease;
+                max-width: 320px;
+            `;
+            toast.innerText = message;
+            container.appendChild(toast);
+            requestAnimationFrame(() => { toast.style.opacity = '1'; toast.style.transform = 'translateY(0)'; });
+            setTimeout(() => {
+                toast.style.opacity = '0'; toast.style.transform = 'translateY(-12px)';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
         }
     </script>
 </body>

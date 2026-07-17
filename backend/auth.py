@@ -24,7 +24,7 @@ settings = Settings()
 SECRET_KEY = settings.SECRET_KEY
 if not SECRET_KEY:
     SECRET_KEY = secrets.token_hex(32)
-    print("⚠️  WARNING: SECRET_KEY is not set. Generating a random ephemeral key.")
+    print("WARNING: SECRET_KEY is not set. Generating a random ephemeral key.")
     print("   Tokens issued during this run will not survive a restart!")
 
 ALGORITHM = "HS256"
@@ -69,4 +69,11 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
     user = db.query(models.User).filter(models.User.username == token_data.username).first()
     if user is None:
         raise credentials_exception
+    if not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User account is deactivated",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     return user
+

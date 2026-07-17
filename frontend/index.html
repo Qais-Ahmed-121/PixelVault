@@ -4,8 +4,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>StegaVault | Secure Authentication</title>
+    <title>PixelVault | Secure Authentication</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="session-manager.js"></script>
+    <script src="crypto-service.js"></script>
+    <script src="api.js"></script>
+    <script src="auth-service.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
         body {
@@ -27,19 +31,38 @@
         .nebula-shadow {
             box-shadow: 0 0 50px -10px rgba(124, 58, 237, 0.3);
         }
+
+        /* Password checklist states */
+        .pwd-rule {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.72rem;
+            color: rgba(148, 163, 184, 0.6); /* slate-400 dimmed */
+            transition: color 0.25s ease, text-shadow 0.25s ease;
+        }
+        .pwd-rule .rule-icon { font-style: normal; }
+        .pwd-rule.met {
+            color: #34d399; /* emerald-400 */
+            text-shadow: 0 0 8px rgba(52, 211, 153, 0.5);
+        }
+        .pwd-rule.met .rule-icon::before { content: '✓ '; }
+        .pwd-rule:not(.met) .rule-icon::before { content: '○ '; }
     </style>
 </head>
 
 <body class="min-h-screen flex items-center justify-center p-6 bg-slate-950 relative overflow-y-auto">
-    <!-- Animated Background Blobs -->
-    <div class="absolute -top-20 -left-20 w-80 h-80 bg-indigo-600/20 blur-[100px] rounded-full"></div>
-    <div class="absolute -bottom-20 -right-20 w-80 h-80 bg-purple-600/20 blur-[100px] rounded-full"></div>
+    <!-- Animated Background Blobs — fixed + overflow-hidden so they never extend the scroll height -->
+    <div class="fixed inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
+        <div class="absolute -top-20 -left-20 w-80 h-80 bg-indigo-600/20 blur-[100px] rounded-full"></div>
+        <div class="absolute -bottom-20 -right-20 w-80 h-80 bg-purple-600/20 blur-[100px] rounded-full"></div>
+    </div>
 
     <div
-        class="glass w-full max-w-md p-8 sm:p-10 rounded-[2.5rem] nebula-shadow relative z-10 border border-white/5 my-8">
-        <div class="text-center mb-10">
+        class="glass w-full max-w-md p-6 sm:p-8 rounded-[2.5rem] nebula-shadow relative z-10 border border-white/5">
+        <div class="text-center mb-6">
             <div
-                class="w-16 h-16 nebula-grad rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-xl shadow-indigo-500/20">
+                class="w-16 h-16 nebula-grad rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-xl shadow-indigo-500/20">
                 <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z">
@@ -48,7 +71,7 @@
             </div>
             <h1
                 class="text-3xl font-extrabold bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent mb-1">
-                StegaVault</h1>
+                PixelVault</h1>
             <p id="mode-text" class="text-gray-400 text-xs">Unlock your secure multi-media vault.</p>
         </div>
 
@@ -77,6 +100,15 @@
                     placeholder="••••••••">
             </div>
 
+            <!-- Password complexity checklist — visible only in Register mode -->
+            <div id="pwd-checklist" class="hidden px-1 pt-1 pb-2 space-y-1.5">
+                <span class="pwd-rule" id="rule-length"><i class="rule-icon"></i>Minimum 8 characters</span>
+                <span class="pwd-rule" id="rule-upper"><i class="rule-icon"></i>At least 1 uppercase letter</span>
+                <span class="pwd-rule" id="rule-lower"><i class="rule-icon"></i>At least 1 lowercase letter</span>
+                <span class="pwd-rule" id="rule-number"><i class="rule-icon"></i>At least 1 number</span>
+                <span class="pwd-rule" id="rule-special"><i class="rule-icon"></i>At least 1 special character</span>
+            </div>
+
             <div id="message" class="hidden p-4 rounded-2xl text-xs font-bold border animate-pulse"></div>
 
             <button type="submit" id="submit-btn"
@@ -95,7 +127,6 @@
     </div>
 
     <script>
-        const API_URL = "http://127.0.0.1:8000";
         let isLogin = true;
 
         const authForm = document.getElementById('auth-form');
@@ -106,8 +137,6 @@
         const emailField = document.getElementById('email-field');
         const messageDiv = document.getElementById('message');
 
-        if (localStorage.getItem('token')) window.location.href = 'dashboard.html';
-
         toggleBtn.addEventListener('click', () => {
             isLogin = !isLogin;
             modeText.innerText = isLogin ? "Unlock your secure multi-media vault." : "Secure your keys and digital assets.";
@@ -116,7 +145,29 @@
             toggleBtn.innerText = isLogin ? "Initialize Account" : "Return to Login";
             emailField.classList.toggle('hidden');
             document.getElementById('email').required = !isLogin;
+            // Clear all shared fields and any stale status message on every mode switch
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
+            document.getElementById('email').value = '';
             messageDiv.classList.add('hidden');
+            messageDiv.innerText = '';
+            // Show/hide password complexity checklist and reset all rules
+            const checklist = document.getElementById('pwd-checklist');
+            checklist.classList.toggle('hidden', isLogin);
+            document.querySelectorAll('.pwd-rule').forEach(r => r.classList.remove('met'));
+        });
+
+        // Live password complexity checker
+        document.getElementById('password').addEventListener('input', function () {
+            if (isLogin) return; // only active in register mode
+            const v = this.value;
+            const toggle = (id, regex) =>
+                document.getElementById(id).classList.toggle('met', regex.test(v));
+            document.getElementById('rule-length').classList.toggle('met', v.length >= 8);
+            toggle('rule-upper',   /[A-Z]/);
+            toggle('rule-lower',   /[a-z]/);
+            toggle('rule-number',  /\d/);
+            toggle('rule-special', /[^a-zA-Z0-9]/);
         });
 
         authForm.addEventListener('submit', async (e) => {
@@ -130,29 +181,15 @@
             }
 
             console.log(`[AUTH] Attempting ${isLogin ? 'Login' : 'Register'} for ${username}`);
-            showMessage('Syncing with StegaVault...', 'indigo');
+            showMessage('Syncing with PixelVault...', 'indigo');
 
             try {
                 if (isLogin) {
-                    const formData = new FormData();
-                    formData.append('username', username);
-                    formData.append('password', password);
-
-                    const res = await fetch(`${API_URL}/login`, { method: 'POST', body: formData });
-                    if (!res.ok) throw await res.json();
-
-                    const data = await res.json();
-                    localStorage.setItem('token', data.access_token);
-                    localStorage.setItem('username', username);
+                    await window.AuthService.login(username, password);
                     window.location.href = 'dashboard.html';
                 } else {
                     const email = document.getElementById('email').value;
-                    const res = await fetch(`${API_URL}/register`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ username, email, password })
-                    });
-                    if (!res.ok) throw await res.json();
+                    await window.AuthService.register(username, email, password);
                     showMessage('Identity Initialized! Moving to Login...', 'green');
                     setTimeout(() => toggleBtn.click(), 1500);
                 }
@@ -161,7 +198,23 @@
                 if (err instanceof TypeError) {
                     showMessage('Server unreachable. Is the backend running?', 'red');
                 } else {
-                    showMessage(err.detail || 'Access Denied', 'red');
+                    // FastAPI 422: detail is an array of validation error objects
+                    // FastAPI 400/401: detail is a plain string
+                    let msg = 'Access Denied';
+                    if (err && Array.isArray(err.detail) && err.detail.length > 0) {
+                        // Extract the first validation message and strip internal "Value error, " prefix
+                        msg = (err.detail[0].msg || 'Validation failed').replace(/^Value error,\s*/i, '');
+                    } else if (err && typeof err.detail === 'string' && err.detail) {
+                        // Route duplicate-user/email conflicts to field-level hints
+                        if (err.detail === 'Username already registered') {
+                            msg = '⚠ That username is already taken. Try another.';
+                        } else if (err.detail === 'Email already registered') {
+                            msg = '⚠ That email is already linked to an account.';
+                        } else {
+                            msg = err.detail;
+                        }
+                    }
+                    showMessage(msg, 'red');
                 }
             }
         });

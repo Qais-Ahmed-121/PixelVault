@@ -4,9 +4,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>StegaVault | Multi-Media Steganography</title>
+    <title>PixelVault | Multi-Media Steganography</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script src="session-manager.js"></script>
+    <script src="crypto-service.js"></script>
+    <script src="api.js"></script>
+    <script src="auth-service.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght=300;400;600;700&display=swap" rel="stylesheet">
     <style>
         body {
             font-family: 'Outfit', sans-serif;
@@ -33,12 +37,26 @@
 </head>
 
 <body class="min-h-screen pb-20">
-    <nav class="glass px-8 py-5 flex justify-between items-center mb-12">
-        <h1 class="text-2xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
-            Steganography Hub</h1>
-        <div class="flex items-center space-x-6">
-            <a href="dashboard.html" class="text-gray-400 hover:text-white transition-colors">Command Center</a>
+    <nav class="glass sticky top-0 z-50 px-6 py-4 flex justify-between items-center mb-12">
+        <div class="flex items-center space-x-2">
+            <div class="w-10 h-10 nebula-grad rounded-xl flex items-center justify-center">
+                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z">
+                    </path>
+                </svg>
+            </div>
+            <h1 class="text-2xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">Steganography Hub</h1>
+        </div>
+        <div class="flex items-center space-x-5 text-sm font-semibold">
+            <a href="stego.html" class="text-white font-bold transition-colors">Stego Hub</a>
             <a href="vault.html" class="text-gray-400 hover:text-white transition-colors">Vault</a>
+            <a href="audit.html" class="text-gray-400 hover:text-white transition-colors">Audit</a>
+            <a href="generator.html" class="text-gray-400 hover:text-white transition-colors">Generator</a>
+            <a href="notes.html" class="text-gray-400 hover:text-white transition-colors">Notes</a>
+            <span class="text-gray-600">|</span>
+            <a href="dashboard.html" class="text-gray-400 hover:text-white transition-colors">Dashboard</a>
+            <button onclick="window.AuthService.logout()" class="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 transition-all">Logout</button>
         </div>
     </nav>
 
@@ -60,31 +78,27 @@
                     <span class="w-2 h-8 bg-indigo-500 rounded-full mr-3"></span>
                     Embed Secret
                 </h3>
-                <form id="embed-form" class="space-y-6">
+                <div class="space-y-6">
                     <div>
-                        <label class="text-xs font-bold text-gray-400 uppercase tracking-widest block mb-2 pl-1">Carrier
-                            File</label>
-                        <input type="file" id="embed-file" required
+                        <label class="text-xs font-bold text-gray-400 uppercase tracking-widest block mb-2 pl-1">Carrier File</label>
+                        <input type="file" id="embed-file"
                             class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 focus:outline-none focus:border-indigo-500">
                     </div>
                     <div>
-                        <label class="text-xs font-bold text-gray-400 uppercase tracking-widest block mb-2 pl-1">Secret
-                            Message</label>
-                        <textarea id="embed-msg" required
+                        <label class="text-xs font-bold text-gray-400 uppercase tracking-widest block mb-2 pl-1">Secret Message</label>
+                        <textarea id="embed-msg"
                             class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 h-32 focus:outline-none focus:border-indigo-500"
                             placeholder="Type your hidden message here..."></textarea>
                     </div>
                     <div>
-                        <label class="text-xs font-bold text-gray-400 uppercase tracking-widest block mb-2 pl-1">Access
-                            Password</label>
-                        <input type="password" id="embed-pass" required
+                        <label class="text-xs font-bold text-gray-400 uppercase tracking-widest block mb-2 pl-1">Access Password</label>
+                        <input type="password" id="embed-pass"
                             class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500"
                             placeholder="••••••••">
                     </div>
-                    <button type="submit"
-                        class="w-full nebula-grad py-4 rounded-xl font-bold shadow-lg shadow-purple-500/20">Process &
-                        Download</button>
-                </form>
+                    <button type="button" onclick="handleEmbed()" id="embed-btn"
+                        class="w-full nebula-grad py-4 rounded-xl font-bold shadow-lg shadow-purple-500/20">Process & Download</button>
+                </div>
             </section>
 
             <!-- Extract Section -->
@@ -93,36 +107,38 @@
                     <span class="w-2 h-8 bg-pink-500 rounded-full mr-3"></span>
                     Extract Secret
                 </h3>
-                <form id="extract-form" class="space-y-6">
+                <div class="space-y-6">
                     <div>
-                        <label class="text-xs font-bold text-gray-400 uppercase tracking-widest block mb-2 pl-1">Stego
-                            File</label>
-                        <input type="file" id="extract-file" required
+                        <label class="text-xs font-bold text-gray-400 uppercase tracking-widest block mb-2 pl-1">Stego File</label>
+                        <input type="file" id="extract-file"
                             class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 focus:outline-none focus:border-pink-500">
                     </div>
                     <div>
-                        <label class="text-xs font-bold text-gray-400 uppercase tracking-widest block mb-2 pl-1">Master
-                            Password</label>
-                        <input type="password" id="extract-pass" required
+                        <label class="text-xs font-bold text-gray-400 uppercase tracking-widest block mb-2 pl-1">Master Password</label>
+                        <input type="password" id="extract-pass"
                             class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500"
                             placeholder="••••••••">
                     </div>
-                    <button type="submit"
-                        class="w-full bg-slate-800 border border-white/5 py-4 rounded-xl font-bold hover:bg-slate-700 transition-all">Retrieve
-                        Message</button>
-                </form>
+                    <button type="button" onclick="handleExtract()" id="extract-btn"
+                        class="w-full bg-slate-800 border border-white/5 py-4 rounded-xl font-bold hover:bg-slate-700 transition-all">Retrieve Message</button>
+                </div>
 
                 <div id="result-box"
-                    class="hidden mt-8 p-6 bg-indigo-500/10 border border-indigo-500/20 rounded-2xl animate-in zoom-in-95">
+                    class="hidden mt-8 p-6 bg-indigo-500/10 border border-indigo-500/20 rounded-2xl">
                     <span class="text-xs font-bold text-indigo-400 uppercase tracking-widest">Decrypted Payload:</span>
-                    <p id="result-text" class="mt-2 text-lg font-bold text-white leading-relaxed"></p>
+                    <p id="result-text" class="mt-2 text-lg font-bold text-white leading-relaxed whitespace-pre-wrap"></p>
                 </div>
             </section>
         </div>
 
         <!-- History Hub -->
         <div class="mt-12 glass p-10 rounded-[2.5rem]">
-            <h3 class="text-xl font-bold mb-6">Recent Operations</h3>
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-bold">Recent Operations</h3>
+                <button onclick="clearAllHistory()" class="px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-lg bg-red-950/40 hover:bg-red-900/60 text-red-400 border border-red-900/50 hover:border-red-700 transition-all">
+                    🧹 Clear All Logs
+                </button>
+            </div>
             <div class="overflow-x-auto">
                 <table class="w-full text-left text-sm">
                     <thead>
@@ -134,118 +150,400 @@
                         </tr>
                     </thead>
                     <tbody id="history-body" class="divide-y divide-white/5">
-                        <!-- History items -->
+                        <!-- History items generated here -->
                     </tbody>
                 </table>
             </div>
         </div>
     </main>
 
-    <script>
-        const API_URL = "http://127.0.0.1:8000";
-        const token = localStorage.getItem('token');
-        if (!token) window.location.href = "index.html";
-        let currentMode = 'image';
+  <script>
 
-        function setMode(mode) {
+    let currentMode = 'image';
+    const extensions = { image: '.png', audio: '.wav', video: '.avi' };
+
+    function setMode(mode) {
+        try {
             currentMode = mode;
+            
             document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active', 'text-white'));
-            document.getElementById(`mode-${mode}`).classList.add('active', 'text-white');
+            
+            const activeBtn = document.getElementById(`mode-${mode}`);
+            if (activeBtn) activeBtn.classList.add('active', 'text-white');
 
-            // Update file accepts
             const ef = document.getElementById('embed-file');
             const xf = document.getElementById('extract-file');
-            if (mode === 'image') { ef.accept = "image/*"; xf.accept = "image/png"; }
-            else if (mode === 'audio') { ef.accept = ".wav"; xf.accept = ".wav"; }
-            else if (mode === 'video') { ef.accept = ".mp4,.avi"; xf.accept = ".avi"; }
+            if (!ef || !xf) return;
+
+            if (mode === 'image') { 
+                ef.accept = "image/*"; 
+                xf.accept = "image/png"; 
+            } else if (mode === 'audio') { 
+                ef.accept = ".wav"; 
+                xf.accept = ".wav"; 
+            } else if (mode === 'video') { 
+                ef.accept = ".mp4,.avi"; 
+                xf.accept = ".avi"; 
+            }
+            
+            console.log("Active steganography pipeline shifted to:", currentMode);
+        } catch (err) {
+            console.error("[MODE CONFIG ERROR]", err);
+        }
+    }
+
+    // EMBEDDING CONTROLLER
+    async function handleEmbed() {
+        const fileInput = document.getElementById('embed-file');
+        const msgInput = document.getElementById('embed-msg');
+        const passInput = document.getElementById('embed-pass');
+        const btn = document.getElementById('embed-btn');
+
+        if (!fileInput || !fileInput.files[0]) {
+            showToast("Please select a valid carrier file.", "error");
+            return;
         }
 
-        document.getElementById('embed-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const formData = new FormData();
-            formData.append('file', document.getElementById('embed-file').files[0]);
-            formData.append('message', document.getElementById('embed-msg').value);
-            formData.append('password', document.getElementById('embed-pass').value);
+        // --- CLIENT-SIDE PRE-FLIGHT GUARD (PREVENTS SOCKET DROPS) ---
+        const MAX_SIZE = 5 * 1024 * 1024; // 5MB
+        if (fileInput.files[0].size > MAX_SIZE) {
+            showToast("File is too large! Maximum allowed size is strictly 5MB.", "error");
+            fileInput.value = "";
+            return;
+        }
 
-            try {
-                const res = await fetch(`${API_URL}/embed/${currentMode}`, {
-                    method: 'POST',
-                    headers: { 'Authorization': `Bearer ${token}` },
-                    body: formData
-                });
-                if (!res.ok) throw await res.json();
+        if (!msgInput.value.trim()) {
+            showToast("Secret message field cannot be empty.", "error");
+            return;
+        }
+        if (!passInput.value) {
+            showToast("An access password is required.", "error");
+            return;
+        }
 
-                const blob = await res.blob();
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `stegavault_${currentMode}_result`;
-                document.body.appendChild(a);
-                a.click();
-                a.remove();
-                loadHistory();
-            } catch (err) {
-                console.error("[EMBED ERROR]", err);
-                alert(err.detail || "Processing failed. Ensure file size < 5MB and format is supported.");
-            }
-        });
+        // Prevent double submissions
+        btn.disabled = true;
+        btn.innerText = "Processing...";
 
-        document.getElementById('extract-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const formData = new FormData();
-            formData.append('file', document.getElementById('extract-file').files[0]);
-            formData.append('password', document.getElementById('extract-pass').value);
+        const formData = new FormData();
+        formData.append('file', fileInput.files[0]);
+        formData.append('message', msgInput.value);
+        formData.append('password', passInput.value);
 
-            try {
-                const res = await fetch(`${API_URL}/extract/${currentMode}`, {
-                    method: 'POST',
-                    headers: { 'Authorization': `Bearer ${token}` },
-                    body: formData
-                });
-                if (!res.ok) throw await res.json();
-
-                const data = await res.json();
-                document.getElementById('result-text').innerText = data.message;
-                document.getElementById('result-box').classList.remove('hidden');
-                loadHistory();
-            } catch (err) {
-                console.error("[EXTRACT ERROR]", err);
-                alert("Extraction failed. Wrong master password or the file does not contain a StegaVault secret.");
-            }
-        });
-
-        async function loadHistory() {
-            const res = await fetch(`${API_URL}/stego/history`, {
-                headers: { 'Authorization': `Bearer ${token}` }
+        try {
+            const res = await window.api.request(`/embed/${currentMode}`, {
+                method: 'POST',
+                body: formData
             });
+            
+            if (!res.ok) {
+                let errData;
+                try {
+                    errData = await res.json();
+                } catch (jsonErr) {
+                    errData = { detail: `Server error: ${res.statusText}` };
+                }
+                throw errData;
+            }
+
+            const blob = await res.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            
+            const safeMode = currentMode || 'payload';
+            const safeExt = extensions[safeMode] || '';
+            a.download = `pixelvault_${safeMode}_result${safeExt}`;
+            
+            document.body.appendChild(a);
+            a.click();
+            
+            setTimeout(() => {
+                a.remove();
+                window.URL.revokeObjectURL(url);
+            }, 250);
+
+            showToast("Payload processed and downloaded successfully!", "success");
+            
+            // Safe cleanup
+            fileInput.value = "";
+            msgInput.value = "";
+            passInput.value = "";
+
+            loadHistory().catch(err => console.warn("Background history update dropped:", err));
+
+        } catch (err) {
+            console.error("[EMBED HARD FAULT]", err);
+            let msg = "Processing failed. Ensure file size is reasonable and format is supported.";
+            if (err && typeof err.detail === 'string') {
+                msg = err.detail;
+            } else if (err && typeof err.message === 'string') {
+                msg = err.message;
+            }
+            showToast(msg, "error");
+        } finally {
+            btn.disabled = false;
+            btn.innerText = "Process & Download";
+        }
+    }
+
+    // EXTRACTION CONTROLLER
+    async function handleExtract() {
+        const resultText = document.getElementById('result-text');
+        const resultBox = document.getElementById('result-box');
+        const fileInput = document.getElementById('extract-file');
+        const passInput = document.getElementById('extract-pass');
+        const btn = document.getElementById('extract-btn');
+
+        if (!fileInput || !fileInput.files[0]) {
+            showToast("Please select a valid stego file.", "error");
+            return;
+        }
+
+        // --- CLIENT-SIDE PRE-FLIGHT GUARD (PREVENTS SOCKET DROPS) ---
+        const MAX_SIZE = 5 * 1024 * 1024; // 5MB
+        if (fileInput.files[0].size > MAX_SIZE) {
+            showToast("File is too large! Maximum allowed size is strictly 5MB.", "error");
+            fileInput.value = "";
+            return;
+        }
+
+        if (!passInput.value) {
+            showToast("Master password is required.", "error");
+            return;
+        }
+
+        // Safe Loading UI State
+        if (resultBox && resultText) {
+            resultBox.classList.remove('hidden');
+            resultBox.className = "mt-8 p-6 bg-blue-500/10 border border-blue-500/30 rounded-2xl animate-pulse";
+            resultText.innerHTML = `<span class="text-blue-400">⚡ Decrypting carrier file and verifying signature...</span>`;
+        }
+
+        btn.disabled = true;
+        btn.innerText = "Extracting...";
+
+        const formData = new FormData();
+        formData.append('file', fileInput.files[0]);
+        formData.append('password', passInput.value);
+
+        try {
+            console.log(`[PIPELINE] Sending extraction query for media channel: ${currentMode}`);
+            const res = await window.api.request(`/extract/${currentMode}`, {
+                method: 'POST',
+                body: formData
+            });
+            
+            let data;
+            const textResponse = await res.text(); // Parse as text first to handle unexpected formats safely[cite: 2]
+            
+            try {
+                data = JSON.parse(textResponse);
+            } catch (parseErr) {
+                throw { detail: textResponse || `Server error code: ${res.status}` };
+            }
+
+            if (!res.ok) {
+                throw data;
+            }
+
+            // Clean Render Success State
+            if (resultText && resultBox) {
+                resultBox.classList.remove('animate-pulse');
+                resultBox.className = "mt-8 p-6 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl";
+                resultText.innerText = data.message || data.text || "File parsed, but no hidden payload was recovered.";
+            }
+            
+            showToast("Secret message extracted successfully!", "success");
+
+            // Clean inputs only on success
+            fileInput.value = "";
+            passInput.value = "";
+
+            loadHistory().catch(err => console.warn("Background history update dropped:", err));
+        } catch (err) {
+            console.error("[EXTRACT ERROR PIPELINE]", err);
+            
+            let errorMsg = "Wrong password, corrupted payload, or invalid file structure.";
+            if (err) {
+                if (typeof err.detail === 'string') {
+                    errorMsg = err.detail;
+                } else if (err.message) {
+                    errorMsg = err.message;
+                } else if (typeof err === 'string') {
+                    errorMsg = err;
+                } else if (err.error) {
+                    errorMsg = err.error;
+                }
+            }
+
+            if (resultText && resultBox) {
+                resultBox.classList.remove('animate-pulse');
+                resultBox.className = "mt-8 p-6 bg-red-500/10 border border-red-500/30 rounded-2xl";
+                resultText.innerHTML = `
+                    <span class="text-red-400 font-semibold">❌ Extraction Failed (${currentMode.toUpperCase()})</span>
+                    <span class="text-gray-400 text-sm mt-2 block">${errorMsg}</span>
+                `;
+            }
+            showToast("Extraction failed.", "error");
+        } finally {
+            btn.disabled = false;
+            btn.innerText = "Retrieve Message";
+        }
+    }
+
+    async function loadHistory() {
+        try {
+            const session = window.SessionManager.getSession();
+            if (!session) return;
+            const res = await window.api.get('/stego/history');
+            
+            if (!res.ok) return;
+
             const history = await res.json();
             const body = document.getElementById('history-body');
-            body.innerHTML = history.reverse().slice(0, 10).map(h => `
+            
+            if (!body || !Array.isArray(history)) return; 
+
+            body.innerHTML = [...history].reverse().slice(0, 10).map(h => `
                 <tr class="hover:bg-white/5 transition-colors">
-                    <td class="py-4 font-bold text-indigo-400">${h.operation_type.toUpperCase()}</td>
-                    <td class="py-4 text-gray-400">${h.description}</td>
-                    <td class="py-4 text-gray-500 text-xs">${new Date(h.created_at).toLocaleString()}</td>
-                    <td class="py-4">
-                        ${h.media_file_id ? `<button onclick="downloadFile(${h.media_file_id})" class="text-purple-400 hover:underline">Download</button>` : 'N/A'}
+                    <td class="py-4 font-bold text-indigo-400">${(h.operation_type || 'UNKNOWN').toUpperCase()}</td>
+                    <td class="py-4 text-gray-400">${h.description || ''}</td>
+                    <td class="py-4 text-gray-500 text-xs">${h.created_at ? new Date(h.created_at).toLocaleString() : ''}</td>
+                    <td class="py-4 flex items-center space-x-4">
+                        ${h.media_file_id ? 
+                            `<button onclick="downloadFile(${h.media_file_id})" class="text-purple-400 hover:underline font-semibold">Download</button>` 
+                            : `<span class="text-gray-600">N/A</span>`
+                        }
+                        <button onclick="deleteSingleHistory(${h.id})" class="text-red-400/70 hover:text-red-400 transition-colors" title="Sanitize Log Record">
+                            🗑️
+                        </button>
                     </td>
                 </tr>
             `).join('');
+        } catch (historyErr) {
+            console.warn("History rendering bypassed safely:", historyErr);
         }
+    }
 
-        async function downloadFile(id) {
-            const res = await fetch(`${API_URL}/stego/download/${id}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+    async function downloadFile(id) {
+        try {
+            if (!id) return;
+            const res = await window.api.get(`/stego/download/${id}`);
+            if (!res.ok) throw new Error("File recovery rejected by endpoint");
+
             const blob = await res.blob();
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = "stegavault_history_item";
+            a.download = `pixelvault_recovered_${id}`;
+            document.body.appendChild(a);
             a.click();
+            
+            setTimeout(() => {
+                a.remove();
+                window.URL.revokeObjectURL(url);
+            }, 100);
+        } catch (err) {
+            console.error("[DOWNLOAD OPERATION ERROR]", err);
+            showToast("Failed to download requested asset from history vault.", "error");
+        }
+    }
+
+    async function deleteSingleHistory(id) {
+        if (!id) return;
+        if (!confirm("Are you sure you want to delete this operation log entry? This action cannot be reversed.")) {
+            return;
         }
 
-        loadHistory();
-    </script>
+        try {
+            const res = await window.api.delete(`/stego/history/${id}`);
+
+            if (!res.ok) {
+                const errData = await res.json().catch(() => ({}));
+                throw new Error(errData.detail || "Database sanitization rejection");
+            }
+
+            showToast("Audit log entry removed.", "success");
+            loadHistory().catch(() => {});
+        } catch (err) {
+            console.error("[DELETION ERROR]", err);
+            showToast(err.message || "Failed to remove item from session records.", "error");
+        }
+    }
+
+    async function clearAllHistory() {
+        if (!confirm("WARNING: You are about to wipe your entire operation history log. Do you proceed?")) {
+            return;
+        }
+
+        try {
+            const res = await window.api.delete('/stego/history/clear');
+
+            if (!res.ok) {
+                const errData = await res.json().catch(() => ({}));
+                throw new Error(errData.detail || "Bulk sanitization rejected by server");
+            }
+
+            showToast("All operational log databases cleared.", "success");
+            loadHistory().catch(() => {});
+        } catch (err) {
+            console.error("[BULK DELETION ERROR]", err);
+            showToast(err.message || "Failed to clear operations.", "error");
+        }
+    }
+
+    loadHistory().catch(err => console.error("Initial pipeline breakdown:", err));
+
+    function showToast(message, type = 'success') {
+        try {
+            let container = document.getElementById('toast-container');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'toast-container';
+                container.style.cssText = 'position:fixed;bottom:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:10px;';
+                document.body.appendChild(container);
+            }
+            const toast = document.createElement('div');
+            
+            const isError = type === 'error';
+            toast.style.cssText = `
+                padding: 14px 24px;
+                border-radius: 12px;
+                color: white;
+                font-family: 'Outfit', sans-serif;
+                font-size: 0.9rem;
+                font-weight: 600;
+                backdrop-filter: blur(12px);
+                background: ${isError ? 'rgba(239,68,68,0.2)' : 'rgba(16,185,129,0.15)'};
+                border: 1px solid ${isError ? 'rgba(239,68,68,0.6)' : 'rgba(16,185,129,0.4)'};
+                box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+                opacity: 0;
+                transform: translateY(16px);
+                transition: opacity 0.3s ease, transform 0.3s ease;
+                max-width: 380px;
+            `;
+            toast.innerText = message;
+            container.appendChild(toast);
+            
+            toast.offsetHeight;
+
+            requestAnimationFrame(() => { 
+                toast.style.opacity = '1'; 
+                toast.style.transform = 'translateY(0)'; 
+            });
+
+            setTimeout(() => {
+                toast.style.opacity = '0'; 
+                toast.style.transform = 'translateY(-12px)';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        } catch (toastErr) {
+            console.error("Toast system malfunction:", toastErr);
+        }
+    }
+</script>
 </body>
 
 </html>

@@ -106,7 +106,7 @@ if __name__ == "__main__":
     print("Generating dummy test WAV...")
     create_dummy_wav(test_input)
     
-    secret = "StegaVault_Audio_Test_2024_TopSecret"
+    secret = "PixelVault_Audio_Test_2024_TopSecret"
     print(f"Original Secret: {secret}")
     
     try:

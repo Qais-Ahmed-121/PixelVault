@@ -35,7 +35,7 @@ deactivate () {
 # unset irrelevant variables
 deactivate nondestructive
 
-VIRTUAL_ENV="C:\Users\qaisa\OneDrive\Desktop\Sem 3\INFO SEC\Info Th\Anti Project\venv"
+VIRTUAL_ENV="C:\Users\qaisa\OneDrive\Desktop\Sem 3\INFO SEC\Info Th\PixelVault\venv"
 export VIRTUAL_ENV
 
 _OLD_VIRTUAL_PATH="$PATH"
